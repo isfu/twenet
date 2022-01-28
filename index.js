@@ -23,6 +23,8 @@ const twitterClient = new TwitterApi({
   accessSecret: process.env.access_secret,
 });
 
+let linkedPosts = [];
+
 client.on('ready', () => {
   console.log('bot ready');
 });
@@ -30,7 +32,20 @@ client.on('ready', () => {
 client.on('messageCreate', async m => {
   if (m.channel.id === process.env.channel_id) {
     let message = `${m.author.username}: ${m.content}`.substring(0, 280);
-    twitterClient.v2.tweet(message).then(x => console.log(message));
+    twitterClient.v2.tweet(message).then(x => {
+      console.log(message);
+      linkedPosts.push({ tweet: x.data.id, message: m.id });
+    });
+  }
+});
+
+client.on('messageDelete', async m => {
+  if (m.channel.id === process.env.channel_id) {
+    linkedPosts.forEach(i => {
+      if (i.message === m.id) {
+        twitterClient.v2.deleteTweet(i.tweet);
+      }
+    });
   }
 });
 
